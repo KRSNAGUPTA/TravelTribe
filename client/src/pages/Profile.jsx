@@ -46,7 +46,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 
 export default function ProfilePage() {
-  const [userData, setUserData] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [userData, setUserData] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [statusFilter, setStatusFilter] = useState("all");
   const [formData, setFormData] = useState({
@@ -56,27 +57,43 @@ export default function ProfilePage() {
     password: "",
     isPasswordChanged: false,
   });
+  const [isUpdating, setIsUpdating] = useState(false);
   const navigate = useNavigate();
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userRes = await api.get("/api/user/profile");
-        setFormData({
-          name: userRes.data.userData.name || "",
-          email: userRes.data.userData.email || "",
-          phone: userRes.data.userData.phone || "",
-          password: "*******",
-          isPasswordChanged: false,
-        });
 
-        const bookingRes = await api.get("/api/booking/my-bookings");
-        setBookings(bookingRes.data || []);
-      } catch (error) {
-        console.error("Error fetching user profile or bookings:", error);
+  const fetchUserData = async () => {
+    try {
+      const [userRes, bookingRes] = await Promise.all([
+        api.get("/api/user/profile"),
+        api.get("/api/booking/my-bookings")
+      ]);
+
+      const { userData } = userRes.data;
+      setUserData(userData);
+      setFormData({
+        name: userData.name || "",
+        email: userData.email || "",
+        phone: userData.phone || "",
+        password: "*******",
+        isPasswordChanged: false,
+      });
+      setBookings(bookingRes.data || []);
+    } catch (error) {
+      toast({
+        title: "Error fetching profile",
+        description: error.message || "Please try again later",
+        variant: "destructive",
+      });
+      if (error.response?.status === 401) {
+        navigate("/login");
       }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
   const filteredBookings = bookings.filter(
     (booking) => statusFilter === "all" || booking.status === statusFilter
@@ -91,12 +108,19 @@ export default function ProfilePage() {
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };
+
   const handleProfileUpdate = async () => {
+    if (isUpdating) return;
+    
     try {
+      setIsUpdating(true);
       const updatedFields = Object.fromEntries(
         Object.entries(formData).filter(
           ([key, value]) =>
-            key !== "isPasswordChanged" && value !== "" && value !== "*******"
+            key !== "isPasswordChanged" && 
+            value !== "" && 
+            value !== "*******" &&
+            value !== userData[key] // Only include changed fields
         )
       );
 
@@ -104,33 +128,40 @@ export default function ProfilePage() {
         delete updatedFields.password;
       }
 
-      if (Object.keys(updatedFields).length > 0) {
-        const res = await api.patch("/api/user/update", updatedFields);
+      if (Object.keys(updatedFields).length === 0) {
         toast({
-          title: "Profile updated successfully",
+          title: "No changes to update",
         });
-
-        const userRes = await api.get("/api/user/profile");
-        setUserData(userRes.data.userData);
-
-        setFormData((prev) => ({
-          ...prev,
-          password: "*******",
-          isPasswordChanged: false,
-        }));
+        return;
       }
+
+      await api.patch("/api/user/update", updatedFields);
+      await fetchUserData(); // Refresh user data
+
+      toast({
+        title: "Profile updated successfully",
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        password: "*******",
+        isPasswordChanged: false,
+      }));
     } catch (error) {
       toast({
-        title: error.message || "Failed to update",
-        description: "Please retry to update profile",
+        title: "Update failed",
+        description: error.response?.data?.message || "Please try again",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
+
   const handleValueChange = (e) => {
     const { id, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
+    setFormData(prev => ({
+      ...prev,
       [id]: value,
       ...(id === "password" && value !== "*******"
         ? { isPasswordChanged: true }
@@ -138,7 +169,8 @@ export default function ProfilePage() {
     }));
   };
 
-  if (!userData) return <Loading />;
+  if (isLoading) return <Loading />;
+  if (!userData) return null;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -153,10 +185,10 @@ export default function ProfilePage() {
             <Avatar className="w-32 h-32 mx-auto">
               <AvatarImage
                 src={userData.profileImage || "/icon.png"}
-                alt={userData?.name || "U"}
+                alt={userData.name?.[0] || "U"}
               />
               <AvatarFallback className="bg-purple-100 text-purple-600">
-                U
+                {userData.name?.[0] || "U"}
               </AvatarFallback>
             </Avatar>
           </div>
@@ -170,14 +202,14 @@ export default function ProfilePage() {
               <div className="space-y-6">
                 <div className="flex flex-col md:flex-row items-start md:space-x-8">
                   <div className="flex-1">
-                    <div className="flex flow-row justify-between p-2 ">
+                    <div className="flex flow-row justify-between p-2">
                       <h3 className="text-xl font-semibold text-gray-900">
                         Personal Information
                       </h3>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button className="rounded-full hover:bg-purple-800 shadow-xl active:scale-90 hover:text-white transition-all divide-purple-600 ease-in hover:cursor-pointer">
-                            <Edit /> Update Profile
+                            <Edit className="mr-2" /> Update Profile
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-100">
@@ -187,7 +219,7 @@ export default function ProfilePage() {
                                 Update Profile
                               </h4>
                               <p className="text-sm text-muted-foreground">
-                                Enter the details which you want to update only
+                                Enter the details you want to update
                               </p>
                             </div>
                             <div className="grid gap-2">
@@ -195,7 +227,7 @@ export default function ProfilePage() {
                                 <Label htmlFor="name">Name</Label>
                                 <Input
                                   id="name"
-                                  defaultValue={userData?.name}
+                                  value={formData.name}
                                   className="col-span-2 h-8"
                                   onChange={handleValueChange}
                                 />
@@ -204,7 +236,7 @@ export default function ProfilePage() {
                                 <Label htmlFor="email">E-mail</Label>
                                 <Input
                                   id="email"
-                                  defaultValue={userData?.email}
+                                  value={formData.email}
                                   className="col-span-2 h-8"
                                   onChange={handleValueChange}
                                 />
@@ -213,7 +245,7 @@ export default function ProfilePage() {
                                 <Label htmlFor="phone">Phone</Label>
                                 <Input
                                   id="phone"
-                                  defaultValue={userData?.phone}
+                                  value={formData.phone}
                                   className="col-span-2 h-8"
                                   onChange={handleValueChange}
                                 />
@@ -231,9 +263,10 @@ export default function ProfilePage() {
                               </div>
                               <Button
                                 onClick={handleProfileUpdate}
+                                disabled={isUpdating}
                                 className="rounded-full p-2 m-2 w-1/2 mx-auto bg-purple-500 hover:bg-purple-900"
                               >
-                                Update
+                                {isUpdating ? "Updating..." : "Update"}
                               </Button>
                             </div>
                           </div>
@@ -260,8 +293,7 @@ export default function ProfilePage() {
                     </div>
                     <div className="mt-4 text-gray-700 flex flex-row space-x-2">
                       <p className="font-semibold flex flex-row">
-                        <LucideAppWindow className="mx-2 w-4 text-purple-800" />{" "}
-                        Joined:
+                        <LucideAppWindow className="mx-2 w-4 text-purple-800" /> Joined:
                       </p>
                       <p>{new Date(userData.createdAt).toLocaleDateString()}</p>
                     </div>
@@ -291,7 +323,7 @@ export default function ProfilePage() {
             </Select>
           </div>
 
-          {bookings.length === 0 ? (
+          {filteredBookings.length === 0 ? (
             <Card className="p-6">
               <p className="text-gray-700 text-center">No bookings found.</p>
             </Card>
@@ -301,7 +333,7 @@ export default function ProfilePage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="text-purple-500 hover:text-purple-900">
-                      <Building className="w-4 h-4 inline mr-2 " />
+                      <Building className="w-4 h-4 inline mr-2" />
                       Hostel
                     </TableHead>
                     <TableHead className="text-purple-500 hover:text-purple-900">
