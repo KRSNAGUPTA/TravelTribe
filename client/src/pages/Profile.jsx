@@ -120,7 +120,7 @@ export default function ProfilePage() {
             key !== "isPasswordChanged" && 
             value !== "" && 
             value !== "*******" &&
-            value !== userData[key] // Only include changed fields
+            value !== userData[key] 
         )
       );
 
@@ -136,7 +136,7 @@ export default function ProfilePage() {
       }
 
       await api.patch("/api/user/update", updatedFields);
-      await fetchUserData(); // Refresh user data
+      await fetchUserData(); 
 
       toast({
         title: "Profile updated successfully",
