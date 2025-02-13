@@ -145,7 +145,7 @@ export default function HostelBooking() {
       setIsSubmitting(false);
     }
   };
-  document.title="Book hostel at chahtraStay"
+  document.title="Book hostel at TravelTribe"
 
   return (
     <div className="min-h-screen flex flex-col">

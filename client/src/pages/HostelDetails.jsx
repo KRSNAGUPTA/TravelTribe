@@ -80,7 +80,7 @@ export default function HostelDetails() {
   if (loading) {
     return <Loading />;
   }
-  document.title="Hostels | chahtraStay"
+  document.title="Hostels | TravelTribe"
 
   return (
     <div className="min-h-screen bg-gray-50">
