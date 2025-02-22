@@ -82,7 +82,9 @@ export default function HomePage() {
   document.title="TravelTribe"
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <Header />
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+        <Header />
+      </div>
       <Toaster />
       <section className="relative min-h-screen flex flex-col md:flex-row items-center justify-center w-full px-6 md:px-16 pt-20 bg-gradient-to-br from-purple-50 via-white to-purple-50">
         <div className="flex flex-col items-start md:w-1/2 space-y-6 z-10">
@@ -172,7 +174,7 @@ export default function HomePage() {
                     key={index}
                     className="md:basis-1/2 lg:basis-1/3 pl-4"
                   >
-                    <Card className="p-4 hover:shadow-xl transition-all duration-300 bg-white">
+                    <Card className="bg-white p-4 hover:shadow-xl transition-all duration-300 ">
                       <CardTitle className="text-xl font-semibold text-center mb-4">
                         {hostel.name}
                       </CardTitle>
@@ -216,7 +218,7 @@ export default function HomePage() {
               {testimonials.map((data, index) => (
                 <CarouselItem
                   key={index}
-                  className="md:basis-1/2 lg:basis-1/3 pl-4"
+                  className="md:basis-1/2 lg:basis-1/3 pl-4 hover:cursor-pointer hover:select-none "
                 >
                   <Card className="shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-110  hover:bg-purple-50">
                     <CardContent className="p-8 flex flex-col items-center">
