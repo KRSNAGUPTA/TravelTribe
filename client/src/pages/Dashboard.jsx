@@ -42,7 +42,7 @@ const AdminDashboard = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(false);
-  const { toast } = useToast;
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -195,7 +195,7 @@ const AdminDashboard = () => {
     });
 
     try {
-      const response = await api.post("/api/hostel/", data, {
+      const response = await api.post("/api/hostel", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -218,7 +218,7 @@ const AdminDashboard = () => {
       });
       setSelectedFiles([]);
     } catch (error) {
-      console.error("Error adding hostel:", error);
+      console.error("Error adding hostel:", error.message);
       toast({
         variant: "destructive",
         title: "Error while adding",
@@ -265,7 +265,9 @@ const AdminDashboard = () => {
 
   return (
     <div className=" flex flex-col space-y-6">
-      <Header />
+      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+        <Header />
+      </div>
       <h1 className="text-3xl font-bold">Admin Dashboard</h1>
       <Toaster />
       <section className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -545,8 +547,8 @@ const AdminDashboard = () => {
         <UserSearch users={users} handleAdminRole={handleAdminRole} />
         <SearchCard hostels={hostels} />
       </section>
-      <section className="flex flex-row">
-        <Card className="w-full max-w-3xl mx-auto p-6 shadow-lg rounded-xl bg-white dark:bg-gray-900">
+      <section className="flex flex-row ">
+        <Card className="mb-20 w-full max-w-3xl mx-auto p-6 shadow-lg rounded-xl bg-white dark:bg-gray-900">
           <CardHeader className="border-b pb-4">
             <CardTitle className="text-3xl font-semibold text-gray-900 dark:text-white">
               Add Hostel
@@ -640,13 +642,7 @@ const AdminDashboard = () => {
                     <Select>
                       <SelectTrigger className="w-full mt-1 rounded-lg border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white">
                         {selectedColleges.length > 0
-                          ? selectedColleges
-                              .map(
-                                (col) =>
-                                  collegesList.find((c) => c.value === col)
-                                    ?.label
-                              )
-                              .join(", ")
+                          ? selectedColleges[0]
                           : "Select Colleges"}
                       </SelectTrigger>
                       <SelectContent>
@@ -820,7 +816,7 @@ const AdminDashboard = () => {
                   )}
                 </div>
               </div>
-              <div className="mt-6">
+              <div className="mt-6 ">
                 <Button
                   type="submit"
                   className="w-full rounded-lg bg-primary text-white py-3 hover:bg-primary/90"
