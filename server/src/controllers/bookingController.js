@@ -1,13 +1,38 @@
 import express from "express";
-import Booking from "../model/BookingModel.js"
+import Booking from "../model/BookingModel.js";
 
 const router = express.Router();
 
 export const createBooking = async (req, res) => {
+  console.log("creating a booking")
+  console.log(req.body)
   try {
-    const { checkIn, hostelId, checkOut, roomSelection, name, email, phone, gender, occupation, amount, transactionId } = req.body;
+    const {
+      checkIn,
+      checkOut,
+      hostelId,
+      roomSelection,
+      name,
+      email,
+      phone,
+      gender,
+      occupation,
+      amount,
+      receiptId
+    } = req.body;
 
-    if (!checkIn || !hostelId || !checkOut || !roomSelection || !amount || !name || !email || !phone || !gender || !occupation || !transactionId) {
+    if (
+      !checkIn ||
+      !hostelId ||
+      !checkOut ||
+      !roomSelection ||
+      !amount ||
+      !name ||
+      !email ||
+      !phone ||
+      !gender ||
+      !occupation
+    ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -27,8 +52,8 @@ export const createBooking = async (req, res) => {
       phone,
       gender,
       occupation,
-      transactionId,
-      status: "pending"
+      receiptId,
+      status: "pending",
     });
 
     await newBooking.save();
@@ -74,7 +99,10 @@ export const cancelBooking = async (req, res) => {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
-    if (booking.user.toString() !== req.user._id.toString() && !req.user.isAdmin) {
+    if (
+      booking.user.toString() !== req.user._id.toString() &&
+      !req.user.isAdmin
+    ) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
@@ -90,7 +118,7 @@ export const confirmBooking = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
-    
+
     booking.status = "confirmed";
     await booking.save();
     res.status(200).json({ message: "Booking confirmed", booking });
@@ -119,9 +147,8 @@ export const generateReceipt = async (req, res) => {
         checkOut: booking.checkOutDate,
         roomSelection: booking.roomSelection,
         totalAmount: booking.amount,
-        transactionId: booking.transactionId,
         status: booking.status,
-      }
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
