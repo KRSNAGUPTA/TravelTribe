@@ -1,6 +1,7 @@
 import Hostel from "../model/HostelModel.js";
 
 export const createHostel = async (req, res) => {
+  console.log("creating hostelpost")
   const { name, location, price, amenities, hostelType, rules, food, mapLink, colleges } = req.body;
 
   if (!name || !location || !price || !hostelType || !mapLink) {
@@ -56,7 +57,8 @@ export const createHostel = async (req, res) => {
 
     return res.status(201).json({ message: "Hostel Created", newHostel });
   } catch (error) {
-    console.error(error);
+    console.log("getting error while creating")
+    console.error(error.message);
     res.status(500).json({ message: error.message });
   }
 };
