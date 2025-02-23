@@ -7,6 +7,9 @@ const bookingSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    receiptId:{
+      type:String,
+    },
     hostelId: {
       type: String,
       required: true,
@@ -26,11 +29,6 @@ const bookingSchema = new mongoose.Schema(
     amount: {
       type: Number,
       required: true,
-    },
-    transactionId: {
-      type: String,
-      required: true,
-      unique: true,
     },
     name: {
       type: String,
