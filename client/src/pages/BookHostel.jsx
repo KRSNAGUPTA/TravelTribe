@@ -25,13 +25,14 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import api from "@/api";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
+import RazorPayPayment from "@/components/RazorPayPayment";
+import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
 export default function HostelBooking() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [receiptId, setReceiptId] = useState("");
   const [formData, setFormData] = useState({
     checkIn: "",
     checkOut: "",
@@ -40,20 +41,20 @@ export default function HostelBooking() {
     email: "",
     phone: "",
     gender: "",
-    occupation: "",
-    hostelId: "",
-    transactionId: "",
     amount: "",
+    occupation: "",
   });
 
   const roomTypes = [
     { id: "shared-4", name: "Shared - 4 Bed", price: 5000 },
     { id: "shared-2", name: "Shared - 2 Bed", price: 7000 },
     { id: "private", name: "Private Room", price: 12000 },
+    { id: "test", name: "for testing", price: 1 },
   ];
 
   const { id } = useParams();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -63,11 +64,19 @@ export default function HostelBooking() {
   };
 
   const validateDates = () => {
-    const checkIn = new Date(formData.checkIn);
-    const checkOut = new Date(formData.checkOut);
+    const checkIn = formData.checkIn ? new Date(formData.checkIn) : null;
+    const checkOut = formData.checkOut ? new Date(formData.checkOut) : null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
+  
+    if (!checkIn || !checkOut || isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+      toast({
+        title: "Missing Check-in or Check-out Date",
+        variant: "destructive",
+      });
+      return false;
+    }
+  
     if (checkIn < today) {
       toast({
         title: "Invalid Check-in Date",
@@ -76,7 +85,7 @@ export default function HostelBooking() {
       });
       return false;
     }
-
+  
     if (checkOut <= checkIn) {
       toast({
         title: "Invalid Check-out Date",
@@ -85,9 +94,10 @@ export default function HostelBooking() {
       });
       return false;
     }
-
+  
     return true;
   };
+  
 
   const validatePhone = () => {
     const phoneRegex = /^[0-9]{10}$/;
@@ -102,50 +112,75 @@ export default function HostelBooking() {
     return true;
   };
 
-  const generateTransactionId = () => {
-    return `${id}-${formData.amount}-${Date.now()}`;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (!validateDates() || !validatePhone()) return;
-
-    setIsSubmitting(true);
-
-    try {
-      const selectedRoom = roomTypes.find(
-        (r) => r.id === formData.roomSelection
-      );
-      const totalAmount = selectedRoom ? selectedRoom.price * 2 : 0;
-
-      const bookingData = {
-        ...formData,
-        hostelId: id,
-        transactionId: generateTransactionId(),
-        amount: totalAmount,
-      };
-
-      const res = await api.post("/api/booking/", bookingData);
-
+  const validateForm = () => {
+    if (!formData.name.trim()) {
       toast({
-        title: "Booking successful",
-        description: "Check your profile for booking information",
-      });
-      navigate("/profile")
-    } catch (error) {
-      toast({
-        title: "Error while booking",
-        description:
-          error.response?.data?.message ||
-          "Contact customer care if any amount was deducted",
+        title: "Missing Name",
+        description: "Please enter your full name.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
+      return false;
     }
+
+    if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!validatePhone()) return false;
+
+    if (!formData.gender) {
+      toast({
+        title: "Select Gender",
+        description: "Please select your gender.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.occupation?.trim()) {
+      toast({
+        title: "Missing Occupation",
+        description: "Please enter your occupation.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.roomSelection) {
+      toast({
+        title: "Select a Room",
+        description: "Please select a room type.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const selectedRoom = roomTypes.find((r) => r.id === formData.roomSelection);
+    if (!selectedRoom) {
+      toast({
+        title: "Invalid Room Selection",
+        description: "Please select a valid room type.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    const totalAmount = selectedRoom ? selectedRoom.price * 2 : 0;
+    setFormData((data) => ({
+      ...data,
+      amount: totalAmount,
+    }));
+
+    if (!validateDates()) return false;
+
+    return true;
   };
-  document.title="Book hostel at TravelTribe"
+
+  document.title = "Book hostel at TravelTribe";
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -165,7 +200,7 @@ export default function HostelBooking() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
-              <form onSubmit={handleSubmit}>
+              <form>
                 <Card className="mb-6">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -361,7 +396,7 @@ export default function HostelBooking() {
                   </CardContent>
                 </Card>
 
-                <Button
+                {/* <Button
                   type="submit"
                   className="w-full"
                   disabled={isSubmitting}
@@ -374,7 +409,12 @@ export default function HostelBooking() {
                   ) : (
                     "Proceed to Payment"
                   )}
-                </Button>
+                </Button> */}
+                <RazorPayPayment
+                  hostelId={id}
+                  formData={formData}
+                  validateForm={validateForm}
+                />
               </form>
             </div>
 
