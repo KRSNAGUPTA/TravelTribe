@@ -4,6 +4,7 @@ import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
 import hostelRoutes from "./routes/hostelRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import cors from "cors"
 dotenv.config();
 const app = express();
@@ -23,6 +24,7 @@ app.get("/api", (req, res) => {
 app.use("/api/user", userRoutes);
 app.use("/api/hostel", hostelRoutes);
 app.use("/api/booking", bookingRoutes);
+app.use("/api/payment", paymentRoutes);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
