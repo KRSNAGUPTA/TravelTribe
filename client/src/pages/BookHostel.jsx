@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ import {
   IndianRupee,
   AlertCircle,
   Loader2,
+  Info,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Header from "@/components/Header";
@@ -29,10 +30,20 @@ import { useNavigate, useParams } from "react-router-dom";
 import RazorPayPayment from "@/components/RazorPayPayment";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import api from "@/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HostelBooking() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptId, setReceiptId] = useState("");
+  const [roomTypes, setRoomTypes] = useState([]);
+  const [bookingSummary, setBookingSummary] = useState({
+    roomType: "",
+    monthlyRent: 0,
+    securityDeposit: 0,
+    numberOfMonths: 0,
+    totalAmount: 0,
+  });
   const [formData, setFormData] = useState({
     checkIn: "",
     checkOut: "",
@@ -42,22 +53,92 @@ export default function HostelBooking() {
     phone: "",
     gender: "",
     amount: "",
-    occupation: "",
   });
-
-  const roomTypes = [
-    { id: "shared-4", name: "Shared - 4 Bed", price: 5000 },
-    { id: "shared-2", name: "Shared - 2 Bed", price: 7000 },
-    { id: "private", name: "Private Room", price: 12000 },
-    { id: "test", name: "for testing", price: 1 },
-  ];
-
+  
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    // Prefill user data from auth context
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: user.name || prev.name,
+        email: user.email || prev.email
+      }));
+    }
+  }, [user]);
+  
+  useEffect(() => {
+    const fetchHostelData = async () => {
+      try {
+        const hostelData = await api.get(`/api/hostel/${id}`);
+        setRoomTypes(hostelData.data.roomTypes);
+      } catch (error) {
+        console.error("Error fetching hostel data:", error);
+        toast({
+          title: "Error fetching hostel data",
+          description: "Please try again later",
+          variant: "destructive",
+        });
+      }
+    };
+    fetchHostelData();
+  }, [id, toast]);
+  
+  // Calculate number of months between dates
+  useEffect(() => {
+    if (formData.checkIn && formData.checkOut && formData.roomSelection) {
+      calculateBookingSummary();
+    }
+  }, [formData.checkIn, formData.checkOut, formData.roomSelection]);
+
+  const calculateBookingSummary = () => {
+    const checkIn = new Date(formData.checkIn);
+    const checkOut = new Date(formData.checkOut);
+    
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) return;
+    
+    // Calculate months difference (including partial months)
+    const months = (checkOut.getFullYear() - checkIn.getFullYear()) * 12 + 
+                  (checkOut.getMonth() - checkIn.getMonth());
+    
+    // Add days as fraction of month if there are remaining days
+    const daysInMonth = new Date(checkOut.getFullYear(), checkOut.getMonth() + 1, 0).getDate();
+    const remainingDays = checkOut.getDate() - checkIn.getDate();
+    const totalMonths = months + (remainingDays > 0 ? remainingDays / daysInMonth : 0);
+    
+    // Round up to nearest month (minimum 1 month)
+    const roundedMonths = Math.max(1, Math.ceil(totalMonths));
+    
+    const selectedRoom = roomTypes.find(r => r.type === formData.roomSelection);
+    
+    if (selectedRoom) {
+      const monthlyRent = selectedRoom.pricePerMonth;
+      const securityDeposit = monthlyRent; // Security deposit equal to 1 month rent
+      const totalRent = monthlyRent * roundedMonths;
+      const totalAmount = totalRent + securityDeposit;
+      
+      setBookingSummary({
+        roomType: selectedRoom.type,
+        monthlyRent,
+        securityDeposit,
+        numberOfMonths: roundedMonths,
+        totalAmount,
+      });
+      
+      setFormData(prev => ({
+        ...prev,
+        amount: totalAmount,
+      }));
+    }
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
@@ -68,7 +149,7 @@ export default function HostelBooking() {
     const checkOut = formData.checkOut ? new Date(formData.checkOut) : null;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-  
+    
     if (!checkIn || !checkOut || isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
       toast({
         title: "Missing Check-in or Check-out Date",
@@ -76,7 +157,7 @@ export default function HostelBooking() {
       });
       return false;
     }
-  
+    
     if (checkIn < today) {
       toast({
         title: "Invalid Check-in Date",
@@ -85,7 +166,7 @@ export default function HostelBooking() {
       });
       return false;
     }
-  
+    
     if (checkOut <= checkIn) {
       toast({
         title: "Invalid Check-out Date",
@@ -94,10 +175,22 @@ export default function HostelBooking() {
       });
       return false;
     }
-  
+    
+    // Ensure minimum 1 month stay
+    const oneMonthLater = new Date(checkIn);
+    oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+    
+    if (checkOut < oneMonthLater) {
+      toast({
+        title: "Minimum Stay Required",
+        description: "Booking must be for at least 1 month",
+        variant: "destructive",
+      });
+      return false;
+    }
+    
     return true;
   };
-  
 
   const validatePhone = () => {
     const phoneRegex = /^[0-9]{10}$/;
@@ -113,7 +206,7 @@ export default function HostelBooking() {
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       toast({
         title: "Missing Name",
         description: "Please enter your full name.",
@@ -121,8 +214,8 @@ export default function HostelBooking() {
       });
       return false;
     }
-
-    if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
+    
+    if (!formData.email?.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address.",
@@ -130,9 +223,9 @@ export default function HostelBooking() {
       });
       return false;
     }
-
+    
     if (!validatePhone()) return false;
-
+    
     if (!formData.gender) {
       toast({
         title: "Select Gender",
@@ -141,16 +234,8 @@ export default function HostelBooking() {
       });
       return false;
     }
-
-    if (!formData.occupation?.trim()) {
-      toast({
-        title: "Missing Occupation",
-        description: "Please enter your occupation.",
-        variant: "destructive",
-      });
-      return false;
-    }
-
+  
+    
     if (!formData.roomSelection) {
       toast({
         title: "Select a Room",
@@ -159,8 +244,8 @@ export default function HostelBooking() {
       });
       return false;
     }
-
-    const selectedRoom = roomTypes.find((r) => r.id === formData.roomSelection);
+    
+    const selectedRoom = roomTypes.find(r => r.type === formData.roomSelection);
     if (!selectedRoom) {
       toast({
         title: "Invalid Room Selection",
@@ -169,26 +254,20 @@ export default function HostelBooking() {
       });
       return false;
     }
-    const totalAmount = selectedRoom ? selectedRoom.price * 2 : 0;
-    setFormData((data) => ({
-      ...data,
-      amount: totalAmount,
-    }));
-
+    
     if (!validateDates()) return false;
-
+    
     return true;
   };
 
   document.title = "Book hostel at TravelTribe";
-
+  
   return (
     <div className="min-h-screen flex flex-col">
       <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10">
         <Header />
       </div>
       <Toaster />
-
       <main className="flex-grow bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
           <div className="mb-8">
@@ -197,7 +276,6 @@ export default function HostelBooking() {
               Fill in the details below to secure your accommodation
             </p>
           </div>
-
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
               <form>
@@ -238,8 +316,9 @@ export default function HostelBooking() {
                             onChange={handleInputChange}
                             required
                             min={
-                              formData.checkIn ||
-                              new Date().toISOString().split("T")[0]
+                              formData.checkIn
+                                ? new Date(new Date(formData.checkIn).setMonth(new Date(formData.checkIn).getMonth() + 1)).toISOString().split("T")[0]
+                                : new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split("T")[0]
                             }
                             className="pl-10"
                             disabled={isSubmitting}
@@ -248,9 +327,16 @@ export default function HostelBooking() {
                         </div>
                       </div>
                     </div>
+                    {formData.checkIn && formData.checkOut && (
+                      <Alert className="bg-blue-50 border-blue-200">
+                        <Info className="h-4 w-4 text-blue-500" />
+                        <AlertDescription className="text-blue-800">
+                          Your booking will be for {bookingSummary.numberOfMonths} {bookingSummary.numberOfMonths === 1 ? 'month' : 'months'}
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </CardContent>
                 </Card>
-
                 <Card className="mb-6">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -270,26 +356,15 @@ export default function HostelBooking() {
                       className="grid gap-4"
                       disabled={isSubmitting}
                     >
-                      {roomTypes.map((room) => (
-                        <div
-                          key={room.id}
-                          className="flex items-center space-x-2"
-                        >
-                          <RadioGroupItem value={room.id} id={room.id} />
-                          <Label htmlFor={room.id} className="flex-1">
-                            <div className="flex justify-between items-center">
-                              <span>{room.name}</span>
-                              <span className="font-semibold text-gray-700">
-                                ₹{room.price}/month
-                              </span>
-                            </div>
-                          </Label>
+                      {roomTypes.map((room, index) => (
+                        <div key={index} className="flex items-center space-x-2">
+                          <RadioGroupItem value={room.type} id={`room-${index}`} />
+                          <Label htmlFor={`room-${index}`}>{room.type} | ₹ {room.pricePerMonth}/month</Label>
                         </div>
                       ))}
                     </RadioGroup>
                   </CardContent>
                 </Card>
-
                 <Card className="mb-6">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -345,6 +420,7 @@ export default function HostelBooking() {
                             onChange={handleInputChange}
                             required
                             className="pl-10"
+                            placeholder="email address"
                             disabled={isSubmitting}
                           />
                           <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
@@ -369,47 +445,8 @@ export default function HostelBooking() {
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="occupation">Occupation</Label>
-                      <Select
-                        name="occupation"
-                        value={formData.occupation}
-                        onValueChange={(value) =>
-                          handleInputChange({
-                            target: { name: "occupation", value },
-                          })
-                        }
-                        disabled={isSubmitting}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select occupation" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="student">Student</SelectItem>
-                          <SelectItem value="professional">
-                            Working Professional
-                          </SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </CardContent>
                 </Card>
-
-                {/* <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Proceed to Payment"
-                  )}
-                </Button> */}
                 <RazorPayPayment
                   hostelId={id}
                   formData={formData}
@@ -417,7 +454,6 @@ export default function HostelBooking() {
                 />
               </form>
             </div>
-
             <div className="md:col-span-1">
               <Card className="sticky top-24">
                 <CardHeader>
@@ -432,43 +468,42 @@ export default function HostelBooking() {
                       <div className="flex justify-between">
                         <span className="text-gray-600">Room Type</span>
                         <span className="font-medium">
-                          {
-                            roomTypes.find(
-                              (r) => r.id === formData.roomSelection
-                            )?.name
-                          }
+                          {bookingSummary.roomType}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-600">Monthly Rent</span>
                         <span className="font-medium">
-                          ₹
-                          {
-                            roomTypes.find(
-                              (r) => r.id === formData.roomSelection
-                            )?.price
-                          }
+                          ₹{bookingSummary.monthlyRent.toLocaleString()}
                         </span>
                       </div>
+                      {bookingSummary.numberOfMonths > 0 && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Duration</span>
+                            <span className="font-medium">
+                              {bookingSummary.numberOfMonths} {bookingSummary.numberOfMonths === 1 ? 'month' : 'months'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Total Rent</span>
+                            <span className="font-medium">
+                              ₹{(bookingSummary.monthlyRent * bookingSummary.numberOfMonths).toLocaleString()}
+                            </span>
+                          </div>
+                        </>
+                      )}
                       <div className="flex justify-between">
                         <span className="text-gray-600">Security Deposit</span>
                         <span className="font-medium">
-                          ₹
-                          {
-                            roomTypes.find(
-                              (r) => r.id === formData.roomSelection
-                            )?.price
-                          }
+                          ₹{bookingSummary.securityDeposit.toLocaleString()}
                         </span>
                       </div>
                       <hr className="my-2" />
                       <div className="flex justify-between font-semibold">
                         <span>Total Due Now</span>
                         <span>
-                          ₹
-                          {(roomTypes.find(
-                            (r) => r.id === formData.roomSelection
-                          )?.price || 0) * 2}
+                          ₹{bookingSummary.totalAmount.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -476,7 +511,7 @@ export default function HostelBooking() {
                   <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription>
-                      Security deposit is refundable at the time of checkout
+                      Security deposit (equal to one month's rent) is refundable at the time of checkout
                       after deducting any damages.
                     </AlertDescription>
                   </Alert>
