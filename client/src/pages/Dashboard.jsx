@@ -38,8 +38,6 @@ const collegesList = [
   { label: "RAIT (Ramrao Adik Institute of Technology)", value: "rait" },
   { label: "St. Francis Institute of Technology", value: "sfit" },
 ];
-import { Popover, PopoverTrigger } from "@/components/ui/popover";
-import { PopoverContent } from "@radix-ui/react-popover";
 import { useNavigate } from "react-router-dom";
 const AdminDashboard = () => {
   document.title = "Dashboard TravelTribe";
