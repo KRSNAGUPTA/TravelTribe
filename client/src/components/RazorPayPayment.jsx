@@ -4,7 +4,6 @@ import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from 'react-router-dom';
-
 const RazorPayPayment = ({hostelId, formData, validateForm }) => {
   const navigate = useNavigate()
   const [isProcessing, setIsProcessing] = useState(false);
@@ -44,7 +43,6 @@ const RazorPayPayment = ({hostelId, formData, validateForm }) => {
     }
 
     setIsProcessing(true);
-    console.log(`Current keys ${import.meta.env.VITE_RAZORPAY_KEY_ID}`)
     try {
       const orderResponse = await api.post("/api/payment/create-order", {
         amount: parseFloat(formData.amount),
