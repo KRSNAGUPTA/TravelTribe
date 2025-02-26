@@ -13,7 +13,7 @@ function About() {
 
       <main className="flex flex-col items-center px-6 md:px-20 py-10 space-y-8">
         <h1 className="text-3xl font-bold text-center">
-          About Chahtra<span className="text-purple-900">Stay</span>
+          About Travel<span className="text-purple-900">Tribe</span>
         </h1>
 
         <Card className="w-full max-w-3xl p-6 shadow-lg">
