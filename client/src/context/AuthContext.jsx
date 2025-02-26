@@ -7,54 +7,105 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const logout = () => {
+  const clearAuthState = () => {
     setUser(null);
+    setError(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     delete api.defaults.headers.common["Authorization"];
+  };
+
+  const logout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     navigate("/login");
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchUserData = async () => {
-      try {
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-        const response = await api.get("/api/user/profile");
-        setUser(response.data.userData);
-        localStorage.setItem("user", JSON.stringify(response.data.userData)); 
-      } catch (error) {
-        logout();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  const login = async (token) => {
-    try {
+  const setAuthToken = (token) => {
+    if (token) {
       localStorage.setItem("token", token);
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      return true;
+    }
+    return false;
+  };
 
-      const response = await api.get("/api/user/profile");
-      setUser(response.data.userData);
-      localStorage.setItem("user", JSON.stringify(response.data.userData));
+  const login = async (email, password) => {
+    try {
+      const response = await api.post("/api/user/login", {
+        email,
+        password
+      });
+
+      if (!response.data) {
+        throw new Error('No response data received');
+      }
+
+      if (!response.data.token) {
+        console.error('Missing token in response:', response.data);
+        throw new Error('Server response missing token');
+      }
+
+      if (!response.data.user) { 
+        console.error('Missing user data in response:', response.data);
+        throw new Error('Server response missing user data');
+      }
+
+      setAuthToken(response.data.token);
+      setUser(response.data.user); 
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      
+      return response.data.user;
+    } catch (error) {
+      console.error('Login error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      clearAuthState();
+      throw error;
+    }
+  };
+
+
+  const signupUser = async (userData) => {
+    try {
+      const response = await api.post("/api/user/signup", {
+        ...userData
+      });
+
+      return response.data;
     } catch (error) {
       throw error;
     }
   };
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    const storedToken = localStorage.getItem("token");
+    if (storedUser && storedToken) {
+      setUser(JSON.parse(storedUser));
+      setAuthToken(storedToken);
+      api.get("/api/user/profile")
+        .catch(() => clearAuthState());
+    }
+    setLoading(false);
+  }, []);
+
+  const contextValue = {
+    user,
+    loading,
+    error,
+    login,
+    logout,
+    signupUser,
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
