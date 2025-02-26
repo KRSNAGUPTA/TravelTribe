@@ -319,7 +319,8 @@ export default function ProfilePage() {
                 </TableHeader>
                 <TableBody>
                   {filteredBookings.map((booking) => (
-                    <TableRow key={booking.transactionId}>
+                    <TableRow key={booking.receiptId}>
+                      <TableCell>{booking.receiptId}</TableCell>
                       <TableCell className="font-medium">
                         {booking.hostelId}
                       </TableCell>
