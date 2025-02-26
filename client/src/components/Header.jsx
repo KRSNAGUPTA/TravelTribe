@@ -49,10 +49,7 @@ const Header = () => {
               </TooltipContent>
             </Tooltip>
           </DockIcon>
-
-          {user ? (
-            <>
-              <DockIcon>
+          {user?.role === "admin" && (<DockIcon>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
@@ -66,8 +63,10 @@ const Header = () => {
                     <p>Dashboard</p>
                   </TooltipContent>
                 </Tooltip>
-              </DockIcon>
+              </DockIcon>)}
 
+          {user ? (
+            <>
               <DockIcon>
                 <Tooltip>
                   <TooltipTrigger asChild>
