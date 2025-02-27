@@ -19,6 +19,12 @@ export const sendNotification = async (type, data) => {
   if (type === "support") {
     message = `${data.name} with email ${data.email} on topic ${data.topic} \nsent a message: ${data.message}`;
   }
+  if (type === "booking") {
+    message = `User ${data.name} (Email: ${data.email}, Phone: ${data.phone}) booked a room at hostel ID ${data.hostelId}.\nDetails are as follows:\n- Receipt ID: ${data.receiptId}\n- Check In: ${data.checkInDate}\n- Check Out: ${data.checkOutDate}\n- Room Type: ${data.roomSelection}\n- Amount Paid: ₹ ${data.amount} /-`;
+  }
+  if (type === "subscribe") {
+    message = `User with email ${data.email} subscribed to the newsletter`;
+  }
   if (!message) {
     console.error(`Type ${type} not supported. Please check the type`);
     return;

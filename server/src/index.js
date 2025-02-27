@@ -42,6 +42,15 @@ app.post("/api/support", async (req, res) => {
     message: "Support request received",
   });
 });
+app.post("/api/subscribe", async (req, res) => {
+  const { email } = req.body;
+  await sendNotification("subscribe", {
+    email,
+  });
+  res.status(200).json({
+    message: "Subscription request received",
+  });
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -1,3 +1,4 @@
+import { sendNotification } from "../discordBot/NotificationBot.js";
 import Booking from "../model/BookingModel.js";
 import Hostel from "../model/HostelModel.js";
 export const createBooking = async (req, res) => {
@@ -55,6 +56,7 @@ export const createBooking = async (req, res) => {
 
     roomType.availability -= 1;
     await hostel.save();
+    await sendNotification("booking",newBooking);
 
     res.status(201).json(newBooking);
   } catch (error) {
