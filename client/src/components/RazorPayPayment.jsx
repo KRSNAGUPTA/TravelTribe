@@ -109,7 +109,7 @@ const RazorPayPayment = ({hostelId, formData, validateForm }) => {
     <Button 
       onClick={handlePayment} 
       disabled={isProcessing}
-      className="w-full"
+      className="bg-purple-600 hover:bg-purple-700 text-white"
     >
       {isProcessing ? (
         <>
