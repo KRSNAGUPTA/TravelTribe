@@ -10,14 +10,11 @@ export const sendNotification = async (type, data) => {
     message = `User ${
       data.name
     } logged in at ${new Date().toLocaleTimeString()} on ${new Date().toLocaleDateString()}`;
-    await axios.post(process.env.DISCORD_BOT_WEBHOOK, {
-      content: `${message}`,
-    });
   }
   if (type === "register") {
     message = `User ${
       data.name
-    } register at ${new Date().toLocaleTimeString()} on ${new Date().toLocaleDateString()}`;
+    } registered at ${new Date().toLocaleTimeString()} on ${new Date().toLocaleDateString()}`;
   }
   if (type === "support") {
     message = `${data.name} with email ${data.email} on topic ${data.topic} \nsent a message: ${data.message}`;
