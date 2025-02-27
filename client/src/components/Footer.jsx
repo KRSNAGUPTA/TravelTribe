@@ -2,21 +2,39 @@ import { toast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
 import { Toaster } from "./ui/toaster";
 import { useState } from "react";
+import api from "@/api";
 
 const Footer = () => {
-  const [email, setEmail] = useState(""); 
+  const [email, setEmail] = useState("");
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     if (!email) {
       return toast({
-        variant: "destructive", 
+        variant: "destructive",
         title: "Please, Enter your email",
       });
     }
-    toast({
-      title: "Thank you for subscribing to TravelTribe!",
-    });
-    setEmail("")
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return toast({
+        variant: "destructive",
+        title: "Please, Enter a valid email",
+      });
+    }
+    try {
+      await api.post("/api/subscribe", {
+        email,
+      });
+      toast({
+        title: "Thank you for subscribing to TravelTribe!",
+      });
+      setEmail("");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Subscription failed. Please try again.",
+      });
+    }
   };
 
   return (
@@ -81,7 +99,7 @@ const Footer = () => {
           <div className="flex items-center bg-gray-800 rounded-full">
             <input
               type="email"
-              value={email} 
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               className="bg-transparent text-white outline-none flex-grow px-2 py-1"
