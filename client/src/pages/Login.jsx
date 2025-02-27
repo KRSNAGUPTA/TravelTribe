@@ -66,10 +66,23 @@ const Login = () => {
       navigate("/");
     } catch (err) {
       let errorMsg = "Something went wrong. Please try again.";
-      setError(err.message ||errorMsg);
+      setError(err.message || errorMsg);
+      console.log(err);
+      if (err.status === 409) {
+        errorMsg = "User already exists. Please log in.";
+        setError(errorMsg);
+      }
+      if (err.status === 400) {
+        errorMsg = "Invalid credentials. Please try again.";
+        setError(errorMsg);
+      }
+      if (err.status === 500) {
+        errorMsg = "Server error. Please try again later.";
+        setError(errorMsg);
+      }
       toast({
         title: type === "signup" ? "Registration Failed" : "Login Failed",
-        description: errorMsg,
+        description: error,
         variant: "destructive",
         icon: <AlertCircle className="text-red-500" />,
       });
