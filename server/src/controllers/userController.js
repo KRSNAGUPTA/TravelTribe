@@ -1,6 +1,7 @@
 import User from "../model/UserModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { sendNotification } from "../discordBot/NotificationBot.js";
 
 export const registerUser = async (req, res) => {
   try {
@@ -50,6 +51,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
       secure: true,
     });
+    await sendNotification("login",user);
 
     res.json({
       message: "Login successful",
