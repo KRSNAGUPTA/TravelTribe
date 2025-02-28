@@ -2,6 +2,56 @@ import User from "../model/UserModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendNotification } from "../discordBot/NotificationBot.js";
+import { OAuth2Client } from "google-auth-library";
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import dotenv from "dotenv";
+dotenv.config(); // Load environment variables
+
+export const handleGoogleLogin = async (req, res) => {
+  try {
+    let { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: "No token provided" });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const { email, name, picture, sub } = ticket.getPayload();
+
+    let user = await User.findOne({ email });
+    if (!user) {
+      user = await User.create({
+        email,
+        name,
+        password: sub,
+        avatar: picture,
+        isGoogleUser: true,
+      });
+      await sendNotification("login", user);
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is missing");
+    }
+
+    const jwtToken = jwt.sign(
+      { id: user._id.toString(), role: "user", email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    await sendNotification("login", user);
+
+    res.json({ jwtToken, user });
+  } catch (error) {
+    console.error("Error in Google Login:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 export const registerUser = async (req, res) => {
   try {
@@ -23,7 +73,7 @@ export const registerUser = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
-    await sendNotification("register",newUser);
+    await sendNotification("register", newUser);
     res.status(201).json({ message: "User registered successfully", token });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -52,7 +102,7 @@ export const loginUser = async (req, res) => {
       httpOnly: true,
       secure: true,
     });
-    await sendNotification("login",user);
+    await sendNotification("login", user);
 
     res.json({
       message: "Login successful",

@@ -10,6 +10,7 @@ import {
   getProfile,
   searchUser,
   updateUser,
+  handleGoogleLogin,
 } from "../controllers/userController.js";
 import { protect, adminOnly } from "../middlewares/authMiddleware.js";
 
@@ -20,6 +21,8 @@ router.get("/", (req, res) => {
     message: "Welcome to user routes",
   });
 });
+
+router.post("/google/callback",handleGoogleLogin)
 
 router.post("/signup", registerUser);
 router.post("/login", loginUser);
