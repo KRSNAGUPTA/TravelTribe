@@ -51,6 +51,7 @@ app.post("/api/subscribe", async (req, res) => {
     message: "Subscription request received",
   });
 });
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
