@@ -146,9 +146,9 @@ export default function ProfilePage() {
             {userData?.name}'s Profile
           </h1>
           <div className="mt-6">
-            <Avatar className="w-32 h-32 mx-auto">
+            <Avatar className="w-40 h-40 mx-auto">
               <AvatarImage
-                src={formData?.profileImage || "/icon.png"}
+                src={userData?.avatar || "/icon.png"}
                 alt={userData?.name || "U"}
               />
               <AvatarFallback className="bg-purple-100 text-purple-600">
@@ -237,7 +237,7 @@ export default function ProfilePage() {
                       <p className="font-semibold flex flex-row">
                         <Phone className="mx-2 w-4 text-purple-800" /> Phone:
                       </p>
-                      <p>{userData.phone}</p>
+                      <p>{userData.phone ? userData.phone : "NA"}</p>
                     </div>
                     <div className="mt-4 text-gray-700 flex flex-row space-x-2">
                       <p className="font-semibold flex flex-row">

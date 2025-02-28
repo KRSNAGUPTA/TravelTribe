@@ -10,6 +10,11 @@ import { AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import { GoogleLogin } from "@react-oauth/google";
+import { Separator } from "@/components/ui/separator";
+import { jwtDecode } from "jwt-decode";
+import { set } from "react-hook-form";
+import api from "@/api";
 
 const Login = () => {
   const { login, signupUser } = useContext(AuthContext);
@@ -104,6 +109,36 @@ const Login = () => {
           <p className="text-center text-gray-600 mb-4">
             Welcome! Sign in or create an account.
           </p>
+          <div className="flex justify-center mb-4">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                const googleToken = credentialResponse.credential;
+                const data = await api.post("/api/user/google/callback", {
+                  token: googleToken,
+                });
+                localStorage.setItem("token", data.data.jwtToken);
+                localStorage.setItem("user", JSON.stringify(data.data.user));
+                toast({
+                  title: "Login Successful",
+                  description: "You are now logged in.",
+                })
+                navigate("/");
+              }}
+              onError={() =>
+                toast({
+                  title: "Login Failed",
+                  description: "Login Failed",
+                  variant: "destructive",
+                  icon: <AlertCircle className="text-red-500" />,
+                })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-center gap-2 my-3 w-full">
+            <Separator className="flex-grow max-w-xs" />
+            <span className="text-gray-500 text-sm font-medium px-2">OR</span>
+            <Separator className="flex-grow max-w-xs" />
+          </div>
 
           <Tabs
             defaultValue="login"

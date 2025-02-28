@@ -37,49 +37,48 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.post("/api/user/login", {
         email,
-        password
+        password,
       });
 
       if (!response.data) {
-        throw new Error('No response data received');
+        throw new Error("No response data received");
       }
 
       if (!response.data.token) {
-        console.error('Missing token in response:', response.data);
-        throw new Error('Server response missing token');
+        console.error("Missing token in response:", response.data);
+        throw new Error("Server response missing token");
       }
 
-      if (!response.data.user) { 
-        console.error('Missing user data in response:', response.data);
-        throw new Error('Server response missing user data');
+      if (!response.data.user) {
+        console.error("Missing user data in response:", response.data);
+        throw new Error("Server response missing user data");
       }
 
       setAuthToken(response.data.token);
-      setUser(response.data.user); 
+      setUser(response.data.user);
       localStorage.setItem("user", JSON.stringify(response.data.user));
-      
+
       return response.data.user;
     } catch (error) {
-      console.error('Login error details:', {
+      console.error("Login error details:", {
         message: error.message,
         response: error.response?.data,
-        status: error.response?.status
+        status: error.response?.status,
       });
       clearAuthState();
       throw error;
     }
   };
-
-
+  
   const signupUser = async (userData) => {
     try {
       const response = await api.post("/api/user/signup", {
-        ...userData
+        ...userData,
       });
 
       return response.data;
     } catch (error) {
-      console.log(error.message)
+      console.log(error.message);
       throw error;
     }
   };
@@ -90,8 +89,7 @@ export const AuthProvider = ({ children }) => {
     if (storedUser && storedToken) {
       setUser(JSON.parse(storedUser));
       setAuthToken(storedToken);
-      api.get("/api/user/profile")
-        .catch(() => clearAuthState());
+      api.get("/api/user/profile").catch(() => clearAuthState());
     }
     setLoading(false);
   }, []);
@@ -103,12 +101,12 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     signupUser,
+    setUser,
+    setAuthToken
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 
