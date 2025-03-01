@@ -54,6 +54,7 @@ const hostelSchema = new mongoose.Schema(
         capacity: { type: Number, required: true },
         pricePerMonth: { type: Number, required: true },
         availability: { type: Number, required: true, default: 0 },
+        numberOfRooms: { type: Number, default: 0 },
       },
     ],
     contactDetails: {

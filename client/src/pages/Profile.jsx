@@ -152,7 +152,7 @@ export default function ProfilePage() {
                 alt={userData?.name || "U"}
               />
               <AvatarFallback className="bg-purple-100 text-purple-600">
-                U
+                {userData?.name?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
           </div>

@@ -176,7 +176,7 @@ export default function HomePage() {
                   >
                     <Card className="bg-white p-4 hover:shadow-xl transition-all duration-300 ">
                       <CardTitle className="text-xl font-semibold text-center mb-4">
-                        {hostel.name}
+                        {hostel?.name.length > 25 ? `${hostel.name.slice(0, 25)}...` : hostel.name}
                       </CardTitle>
                       <CardContent className="flex flex-col items-center p-0">
                         <img

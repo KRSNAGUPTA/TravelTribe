@@ -26,7 +26,7 @@ export const sendNotification = async (type, data) => {
     message = `User with email ${data.email} subscribed to the newsletter`;
   }
   if (!message) {
-    console.error(`Type ${type} not supported. Please check the type`);
+    message = `Type ${type} not supported. Please check the type`;
     return;
   }
   await axios.post(process.env.DISCORD_BOT_WEBHOOK, {

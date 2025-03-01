@@ -656,7 +656,7 @@ export default function HostelDetails() {
           </TabsContent>
         </Tabs>
 
-        <div className="sticky bottom-0 left-0 right-0 bg-white p-4 shadow-lg rounded-full border-t z-10 md:relative md:shadow-none md:p-0 md:border-0">
+        <div className="sticky bottom-0 left-0 right-0 bg-white p-4 shadow-lg rounded-lg border-t z-10 md:relative md:shadow-none md:p-0 md:border-0">
           <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-between items-center max-w-5xl mx-auto">
             <div className="text-center sm:text-left">
               {hostel.roomTypes && hostel.roomTypes.length > 0 && (

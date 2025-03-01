@@ -5,7 +5,7 @@ import { sendNotification } from "../discordBot/NotificationBot.js";
 import { OAuth2Client } from "google-auth-library";
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 import dotenv from "dotenv";
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 export const handleGoogleLogin = async (req, res) => {
   try {
@@ -31,7 +31,7 @@ export const handleGoogleLogin = async (req, res) => {
         avatar: picture,
         isGoogleUser: true,
       });
-      await sendNotification("login", user);
+      await sendNotification("register", user);
     }
 
     if (!process.env.JWT_SECRET) {

@@ -135,9 +135,9 @@ const Login = () => {
             />
           </div>
           <div className="flex items-center justify-center gap-2 my-3 w-full">
-            <Separator className="flex-grow max-w-xs" />
+            <Separator className="flex-grow max-w-32 " />
             <span className="text-gray-500 text-sm font-medium px-2">OR</span>
-            <Separator className="flex-grow max-w-xs" />
+            <Separator className="flex-grow max-w-32" />
           </div>
 
           <Tabs
