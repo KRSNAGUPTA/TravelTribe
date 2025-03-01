@@ -16,6 +16,8 @@ const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contact = lazy(() => import("./pages/Contact"));
 
+import { inject } from "@vercel/analytics";
+inject();
 function App() {
   return (
     <Router>
