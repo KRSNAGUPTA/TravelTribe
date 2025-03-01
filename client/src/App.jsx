@@ -16,8 +16,6 @@ const Login = lazy(() => import("./pages/Login"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Contact = lazy(() => import("./pages/Contact"));
 
-import { SpeedInsights } from "@vercel/speed-insights/react"
-import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   return (
@@ -59,8 +57,6 @@ function App() {
               <Route path="/*" element={<NotFound />} />
             </Routes>
           </Suspense>
-          <Analytics/>
-          <SpeedInsights/>
         </AuthProvider>
       </GoogleOAuthProvider>
     </Router>
